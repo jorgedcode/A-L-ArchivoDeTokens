@@ -71,51 +71,82 @@ namespace ArchivoDeTokens
                 List<string> filasDeTokens = new List<string>();
                 string tokens = "";
                 bool cadAbierta = false;
+                bool comentario = false, tokenFDLSeguidoCar = false;
+                int j = 0;
+                string val = "";
                 for (int numLinea = 0; numLinea < lineasCodigo.Length; numLinea++)
                 {
                     string lineaCodActual = lineasCodigo[numLinea];
                     string tokensDeLinea = "";
                     string lineaLista = lineaCodActual.TrimEnd();
+                    string tokenFDL = "";
                     if (!lineaLista.EndsWith("~"))
                     {
-                        //ERROR por falta de simbolo ~ al final de la linea
+                        tokenFDL = "ERRFDL ";
+                        // ERROR por falta de simbolo ~ al final de la linea.
+                    }
+                    else
+                    {
+                        tokenFDL = "FDL ";
                     }
                     lineaCodActual = lineaLista+" ";
                     cadAbierta = false;
+                    comentario = false;
 
                     for (int numCaracter = 0; numCaracter < lineaCodActual.Length; numCaracter++)
                     {
+                        if (lineaCodActual[numCaracter] == '~' && numCaracter < lineaCodActual.Length - 2)
+                        {
+                            if (numCaracter > 0 && lineaCodActual[numCaracter - 1] != ' ')
+                            {
+                                tokenFDLSeguidoCar = true;
+
+                            }
+                            else
+                            {
+                                tokenFDLSeguidoCar = false;
+                                tokensDeLinea += "FDL ";
+                            }
+                            numCaracter++;
+                        }
+                        else if (lineaCodActual[numCaracter] == '~' && lineaCodActual.Length-2 == numCaracter)
+                        {
+                            tokenFDL = "FDL ";
+                            numCaracter++;
+                        }
                         car = lineaCodActual[numCaracter];
                         if (estadoActual == 1 && (car == ' ' || car == '\t' || car == '\r' || car == '\n'))
                         {
                             continue; 
                         }
-                        if(car == '"')
+                        if(car == '"' && !comentario)
                         {
                             cadAbierta = !cadAbierta;
-                        }
-                        
-                        if((car == ' ' || car == '\t') && cadAbierta)
+                        }else if(car == '#')
                         {
-                            numCaracter++;
-                            car = lineaCodActual[numCaracter];
+                            comentario = true;
                         }
-
-                        if ((car == ' ' || car == '\t') && !cadAbierta)
+                        if (numCaracter == lineaCodActual.Length - 1)
                         {
                             strCar = "FDC";
+                        }
+                        else if ((car == ' ' || car == '\t') && !cadAbierta && !comentario)
+                        {
+                            strCar = "FDC";
+                        }
+                        else if ((car == ' ' || car == '\t') && (cadAbierta || comentario))
+                        {
+                            
+                            continue;
                         }
                         else
                         {
                             if (char.IsLetter(car))
                             {
-
                                 strCar = car.ToString();
-                                if (char.IsLower(car))
-                                {
-                                    strCar = car + "1";
-                                }
-                            }else if (char.IsDigit(car))
+                                if (char.IsLower(car)) { strCar = car + "1"; }
+                            }
+                            else if (char.IsDigit(car))
                             {
                                 strCar = "_" + car;
                             }
@@ -144,6 +175,7 @@ namespace ArchivoDeTokens
                                 tokensDeLinea += matrizTransicion[int.Parse(celdaActual)]["CAT"] + " ";
                                 tokens += matrizTransicion[int.Parse(celdaActual)]["CAT"]+" ";
                                 estadoActual = 1;
+                                val = matrizTransicion[int.Parse(celdaActual)]["CAT"] + " ";
 
                                 if (strCar != "FDC")
                                 {
@@ -154,11 +186,18 @@ namespace ArchivoDeTokens
                             {
                                 estadoActual = int.Parse(celdaActual);
                             }
+                            if (tokenFDLSeguidoCar)
+                            {
+                                tokensDeLinea += "FDL ";
+                                tokenFDLSeguidoCar = false;
+                            }
                         }
                         
                     }
                     tokens.TrimEnd(' ');
                     tokens += "\n";
+                    tokensDeLinea += tokenFDL;
+                    comentario = false;
                     filasDeTokens.Add(tokensDeLinea.TrimEnd());
                 }
                 rtxtTokens.Lines = filasDeTokens.ToArray();
