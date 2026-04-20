@@ -14,12 +14,18 @@ namespace ArchivoDeTokens
 {
     public partial class Form1 : Form
     {
+        private List<ErrorLexico> listaErrores = new List<ErrorLexico>();
+        private List<Simbolo> listaSimbolos = new List<Simbolo>();
         private Dictionary<int, Dictionary<string, string>> matrizTransicion = new Dictionary<int, Dictionary<string, string>>();
+        private int contadorSimbolos;
+        private int contadorLinea = 2;
 
         public Form1()
         {
             InitializeComponent();
             CargarMatrizEnMemoria();
+            nLinea.Text = "1" + "\n";
+
         }
 
         private void CargarMatrizEnMemoria()
@@ -58,8 +64,11 @@ namespace ArchivoDeTokens
 
         private void btnLexico_Click(object sender, EventArgs e)
         {
+            ActualizarErrores();
+            ActualizarSimbolos();
             try
             {
+                listaErrores.Clear();
                 if (string.IsNullOrEmpty(rtxtCodigo.Text))
                     throw new Exception("No hay código");
 
@@ -74,6 +83,7 @@ namespace ArchivoDeTokens
                 bool comentario = false, tokenFDLSeguidoCar = false;
                 int j = 0;
                 string val = "";
+                string  valCadena = "";
                 for (int numLinea = 0; numLinea < lineasCodigo.Length; numLinea++)
                 {
                     string lineaCodActual = lineasCodigo[numLinea];
@@ -83,7 +93,7 @@ namespace ArchivoDeTokens
                     if (!lineaLista.EndsWith("~"))
                     {
                         tokenFDL = "ERRFDL ";
-                        // ERROR por falta de simbolo ~ al final de la linea.
+                        RegistrarError(numLinea + 1, "Falta el símbolo delimitador '~' al final");
                     }
                     else
                     {
@@ -126,6 +136,12 @@ namespace ArchivoDeTokens
                         {
                             comentario = true;
                         }
+                        if (!char.IsWhiteSpace(car) || cadAbierta)
+                        {
+                            valCadena += car;
+                        }
+
+
                         if (numCaracter == lineaCodActual.Length - 1)
                         {
                             strCar = "FDC";
@@ -166,7 +182,8 @@ namespace ArchivoDeTokens
                             {
                                 tokensDeLinea += "[ERROR:" + matrizTransicion[int.Parse(celdaActual)]["CAT"] + "] ";
                                 tokens += "[ERROR:" + matrizTransicion[int.Parse(celdaActual)]["CAT"] + "] ";
-
+                                RegistrarError(numLinea + 1, "[ERROR:" + matrizTransicion[int.Parse(celdaActual)]["CAT"] + "] ");
+                                valCadena = "";
                                 estadoActual = 1;
 
                             }
@@ -176,7 +193,9 @@ namespace ArchivoDeTokens
                                 tokens += matrizTransicion[int.Parse(celdaActual)]["CAT"]+" ";
                                 estadoActual = 1;
                                 val = matrizTransicion[int.Parse(celdaActual)]["CAT"] + " ";
-
+                                if(matrizTransicion[int.Parse(celdaActual)]["CAT"] == "IDVAL")
+                                    RegistrarSimbolo(contadorSimbolos++, valCadena);
+                                valCadena = "";
                                 if (strCar != "FDC")
                                 {
                                     numCaracter--;
@@ -205,6 +224,115 @@ namespace ArchivoDeTokens
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message,"Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            ActualizarErrores();
+            ActualizarSimbolos();
+
+        }
+
+        private void RegistrarError(int linea, string mensaje)
+        {
+            listaErrores.Add(new ErrorLexico
+            {
+                Linea = linea,
+                Descripcion = mensaje
+            });
+            ActualizarErrores();
+        }
+
+        private void RegistrarSimbolo(int num, string nombre)
+        {
+            bool flag = true;
+            foreach (Simbolo simbolo in listaSimbolos)
+            {
+                if (simbolo.Nombre == nombre)
+                    flag = false;
+            }
+            if(flag)
+            {
+                listaSimbolos.Add(new Simbolo
+                {
+                    Num = num,
+                    Nombre = nombre
+                });
+                ActualizarSimbolos();
+            }
+            
+        }
+
+        private void ActualizarErrores()
+        {
+            DgvErrores.Rows.Clear();
+            foreach (ErrorLexico error in listaErrores)
+            {
+               DgvErrores.Rows.Add(error.Linea, error.Descripcion);
+            }
+        }
+        private void ActualizarSimbolos()
+        {
+            DgvSimbolos.Rows.Clear();
+            foreach (Simbolo simbolo in listaSimbolos)
+            {
+                DgvSimbolos.Rows.Add(simbolo.Num, simbolo.Nombre);
+            }
+
+        }
+
+        private void rtxtCodigo_KeyDown(object sender, KeyEventArgs e)
+        {
+            if(e.KeyCode == Keys.Enter)
+            {
+                nLinea.Text += contadorLinea++ + "\n";
+                Size tamano = nLinea.Size;
+                nLinea.Size = new Size(tamano.Width, tamano.Height + 13);
+            }
+            int posicion = rtxtCodigo.SelectionStart;
+
+            // Si presiona Backspace y no está al inicio
+            if (e.KeyCode == Keys.Back && posicion > 0)
+            {
+                char caracterABorrar = rtxtCodigo.Text[posicion - 1];
+                if (caracterABorrar == '\n')
+                {
+                    string auxText = "";
+                    String[] numerosLinea = nLinea.Text.Split('\n');
+                    for (int i = 0; i < numerosLinea.Length - 2; i++)
+                    {
+                        auxText += numerosLinea[i] + "\n";
+                    }
+                    nLinea.Text = auxText;
+                    contadorLinea--;
+                    Size tamano = nLinea.Size;
+                    nLinea.Size = new Size(tamano.Width, tamano.Height - 13);
+                    if (contadorLinea == 2)
+                    {
+                        nLinea.Text = "1" + "\n";
+                        nLinea.Size = new Size(tamano.Width, 13);
+                    }
+                }
+            }
+            // Si presiona Suprimir y no está al final
+            else if (e.KeyCode == Keys.Delete && posicion < rtxtCodigo.Text.Length)
+            {
+                char caracterABorrar = rtxtCodigo.Text[posicion];
+                if (caracterABorrar == '\n')
+                {
+                    string auxText = "";
+                    String[] numerosLinea = nLinea.Text.Split('\n');
+                    for (int i = 0; i < numerosLinea.Length - 2; i++)
+                    {
+                        auxText += numerosLinea[i] + "\n";
+                    }
+                    nLinea.Text = auxText;
+                    contadorLinea--;
+                    Size tamano = nLinea.Size;
+                    nLinea.Size = new Size(tamano.Width, tamano.Height - 13);
+                    if (contadorLinea == 2)
+                    {
+                        nLinea.Text = "1" + "\n";
+                        nLinea.Size = new Size(tamano.Width, 13);
+                    }
+                }
             }
         }
     }
