@@ -27,6 +27,8 @@ namespace ArchivoDeTokens
             InitializeComponent();
             CargarMatrizEnMemoria();
             nLinea.Text = "1" + "\n";
+            nLinea2.Text = "1" + "\n";
+
             lblEquipo.Text = "Equipo\nHiram García Guerra. #23100161\nJorge Arturo Mata Camacho. #C21100514\nReynaldo Daniel Reyes Parra. #23100202";
 
         }
@@ -100,7 +102,7 @@ namespace ArchivoDeTokens
                     {
                         tokenFDL = "ERRFDL ";
                         contE++;
-                        RegistrarError(numLinea + 1, "Falta el símbolo delimitadol '~' al final");
+                        RegistrarError(numLinea + 1, "Falta el símbolo delimitador '~' al final");
                     }
                     else
                     {
@@ -295,35 +297,35 @@ namespace ArchivoDeTokens
             {
                 switch (error.Descripcion)
                 {
-                    case "PLINV":
-                        error.Descripcion = "Palabla leselvada INVALIDA";
+                    case "PRINV":
+                        error.Descripcion = "Palabra Reservada INVALIDA";
                         break;
                     case "CNINV":
-                        error.Descripcion = "Constante Numelica INVALIDA";
+                        error.Descripcion = "Constante Numerica INVALIDA";
 
                         break;
                     case "VAINV":
-                        error.Descripcion = "Valol INVALIDO";
+                        error.Descripcion = "Valor INVALIDO";
 
                         break;
                     case "IDINV":
-                        error.Descripcion = "Identificadol INVALIDO";
+                        error.Descripcion = "Identificador INVALIDO";
 
                         break;
-                    case "EOPALINV":
-                        error.Descripcion = "Elol alitmetico";
+                    case "EOPARINV":
+                        error.Descripcion = "Error aritmetico";
 
                         break;
-                    case "EOPLELINV":
-                        error.Descripcion = "Elol opeladol lelacion";
+                    case "EOPRELINV":
+                        error.Descripcion = "Error operador relacion";
 
                         break;
                     case "ECADINV":
-                        error.Descripcion = "Elol cadena INVALIDA";
+                        error.Descripcion = "Error cadena INVALIDA";
 
                         break;
-                    case "ECALINV":
-                        error.Descripcion = "Elol calactel INVADLIDO";
+                    case "ECARINV":
+                        error.Descripcion = "Error caracter INVALIDO";
 
                         break;
                 }
@@ -344,9 +346,13 @@ namespace ArchivoDeTokens
         {
             if(e.KeyCode == Keys.Enter)
             {
-                nLinea.Text += contadorLinea++ + "\n";
+                nLinea.Text += contadorLinea + "\n";
                 Size tamano = nLinea.Size;
                 nLinea.Size = new Size(tamano.Width, tamano.Height + 13);
+                //
+                nLinea2.Text += contadorLinea++ + "\n";
+                Size tamano2 = nLinea2.Size;
+                nLinea2.Size = new Size(tamano2.Width, tamano2.Height + 13);
             }
             int posicion = rtxtCodigo.SelectionStart;
 
@@ -354,6 +360,7 @@ namespace ArchivoDeTokens
             if (e.KeyCode == Keys.Back && posicion > 0)
             {
                 char caracterABorrar = rtxtCodigo.Text[posicion - 1];
+
                 if (caracterABorrar == '\n')
                 {
                     string auxText = "";
@@ -363,13 +370,17 @@ namespace ArchivoDeTokens
                         auxText += numerosLinea[i] + "\n";
                     }
                     nLinea.Text = auxText;
+                    nLinea2.Text = auxText;
                     contadorLinea--;
                     Size tamano = nLinea.Size;
                     nLinea.Size = new Size(tamano.Width, tamano.Height - 13);
+                    nLinea2.Size = new Size(tamano.Width, tamano.Height - 13);
                     if (contadorLinea == 2)
                     {
                         nLinea.Text = "1" + "\n";
                         nLinea.Size = new Size(tamano.Width, 13);
+                        nLinea2.Text = "1" + "\n";
+                        nLinea2.Size = new Size(tamano.Width, 13);
                     }
                 }
             }
@@ -386,13 +397,18 @@ namespace ArchivoDeTokens
                         auxText += numerosLinea[i] + "\n";
                     }
                     nLinea.Text = auxText;
+                    nLinea2.Text = auxText;
                     contadorLinea--;
                     Size tamano = nLinea.Size;
                     nLinea.Size = new Size(tamano.Width, tamano.Height - 13);
+                    nLinea2.Size = new Size(tamano.Width, tamano.Height - 13);
+
                     if (contadorLinea == 2)
                     {
                         nLinea.Text = "1" + "\n";
                         nLinea.Size = new Size(tamano.Width, 13);
+                        nLinea2.Text = "1" + "\n";
+                        nLinea2.Size = new Size(tamano.Width, 13);
                     }
                 }
             }
@@ -419,12 +435,16 @@ namespace ArchivoDeTokens
             }
 
             nLinea.Text = numeros;
+            nLinea2.Text = numeros;
+
 
             // Sincronizamos tu variable global para que el KeyDown siga funcionando
             contadorLinea = totalLineas + 1;
 
             // Ajustamos el tamaño del control según tu lógica original (13 px por línea)
             nLinea.Size = new Size(nLinea.Width, totalLineas * 13);
+            nLinea2.Size = new Size(nLinea.Width, totalLineas * 13);
+
         }
 
         private void btnCargarProg_Click(object sender, EventArgs e)
