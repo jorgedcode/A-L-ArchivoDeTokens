@@ -26,11 +26,9 @@ namespace ArchivoDeTokens
         {
             InitializeComponent();
             CargarMatrizEnMemoria();
-            nLinea.Text = "1" + "\n";
-            nLinea2.Text = "1" + "\n";
-
             lblEquipo.Text = "Equipo\nHiram García Guerra. #23100161\nJorge Arturo Mata Camacho. #C21100514\nReynaldo Daniel Reyes Parra. #23100202";
-
+            rtxTokens.Text = "1\n";
+            rtxLineasCodigo.Text = "1\n";
         }
 
         private void CargarMatrizEnMemoria()
@@ -239,6 +237,16 @@ namespace ArchivoDeTokens
                         }
                         
                     }
+                    if (cadAbierta)
+                    {
+                        tokensDeLinea += "[ERROR:ECADINV] ";
+                        tokens += "[ERROR:ECADINV] ";
+                        RegistrarError(numLinea + 1, "ECADINV");
+                        contE++;
+                        cadAbierta = false;
+                        estadoActual = 1;
+                        valCadena = "";
+                    }
                     tokens.TrimEnd(' ');
                     tokens += "\n";
                     tokensDeLinea += tokenFDL;
@@ -344,73 +352,10 @@ namespace ArchivoDeTokens
 
         private void rtxtCodigo_KeyDown(object sender, KeyEventArgs e)
         {
-            if(e.KeyCode == Keys.Enter)
+            if(e.KeyCode == Keys.Tab)
             {
-                nLinea.Text += contadorLinea + "\n";
-                Size tamano = nLinea.Size;
-                nLinea.Size = new Size(tamano.Width, tamano.Height + 13);
-                //
-                nLinea2.Text += contadorLinea++ + "\n";
-                Size tamano2 = nLinea2.Size;
-                nLinea2.Size = new Size(tamano2.Width, tamano2.Height + 13);
-            }
-            int posicion = rtxtCodigo.SelectionStart;
-
-            // Si presiona Backspace y no está al inicio
-            if (e.KeyCode == Keys.Back && posicion > 0)
-            {
-                char caracterABorrar = rtxtCodigo.Text[posicion - 1];
-
-                if (caracterABorrar == '\n')
-                {
-                    string auxText = "";
-                    String[] numerosLinea = nLinea.Text.Split('\n');
-                    for (int i = 0; i < numerosLinea.Length - 2; i++)
-                    {
-                        auxText += numerosLinea[i] + "\n";
-                    }
-                    nLinea.Text = auxText;
-                    nLinea2.Text = auxText;
-                    contadorLinea--;
-                    Size tamano = nLinea.Size;
-                    nLinea.Size = new Size(tamano.Width, tamano.Height - 13);
-                    nLinea2.Size = new Size(tamano.Width, tamano.Height - 13);
-                    if (contadorLinea == 2)
-                    {
-                        nLinea.Text = "1" + "\n";
-                        nLinea.Size = new Size(tamano.Width, 13);
-                        nLinea2.Text = "1" + "\n";
-                        nLinea2.Size = new Size(tamano.Width, 13);
-                    }
-                }
-            }
-            // Si presiona Suprimir y no está al final
-            else if (e.KeyCode == Keys.Delete && posicion < rtxtCodigo.Text.Length)
-            {
-                char caracterABorrar = rtxtCodigo.Text[posicion];
-                if (caracterABorrar == '\n')
-                {
-                    string auxText = "";
-                    String[] numerosLinea = nLinea.Text.Split('\n');
-                    for (int i = 0; i < numerosLinea.Length - 2; i++)
-                    {
-                        auxText += numerosLinea[i] + "\n";
-                    }
-                    nLinea.Text = auxText;
-                    nLinea2.Text = auxText;
-                    contadorLinea--;
-                    Size tamano = nLinea.Size;
-                    nLinea.Size = new Size(tamano.Width, tamano.Height - 13);
-                    nLinea2.Size = new Size(tamano.Width, tamano.Height - 13);
-
-                    if (contadorLinea == 2)
-                    {
-                        nLinea.Text = "1" + "\n";
-                        nLinea.Size = new Size(tamano.Width, 13);
-                        nLinea2.Text = "1" + "\n";
-                        nLinea2.Size = new Size(tamano.Width, 13);
-                    }
-                }
+                e.SuppressKeyPress = true;
+                rtxtCodigo.SelectedText = "     ";
             }
         }
 
@@ -421,30 +366,7 @@ namespace ArchivoDeTokens
 
         private void ActualizarNumerosDeLinea()
         {
-            // Obtenemos la cantidad real de líneas en el RichTextBox
-            int totalLineas = rtxtCodigo.Lines.Length;
-
-            // Si el texto está vacío, evitamos que marque 0 y lo dejamos en 1
-            if (totalLineas == 0) totalLineas = 1;
-
-            // Reconstruimos el texto de los números
-            string numeros = "";
-            for (int i = 1; i <= totalLineas; i++)
-            {
-                numeros += i + "\n";
-            }
-
-            nLinea.Text = numeros;
-            nLinea2.Text = numeros;
-
-
-            // Sincronizamos tu variable global para que el KeyDown siga funcionando
-            contadorLinea = totalLineas + 1;
-
-            // Ajustamos el tamaño del control según tu lógica original (13 px por línea)
-            nLinea.Size = new Size(nLinea.Width, totalLineas * 13);
-            nLinea2.Size = new Size(nLinea.Width, totalLineas * 13);
-
+            
         }
 
         private void btnCargarProg_Click(object sender, EventArgs e)
@@ -608,6 +530,60 @@ namespace ArchivoDeTokens
             rtxt.SelectionStart = rtxt.Text.Length;
             rtxt.SelectionLength = 0;
             rtxt.SelectionColor = Color.Black;
+        }
+
+        private void rtxtCodigo_TextChanged(object sender, EventArgs e)
+        {
+            Point pt = new Point(0, 0);
+            int firstIndex = rtxtCodigo.GetCharIndexFromPosition(pt);
+            int firstLine = rtxtCodigo.GetLineFromCharIndex(firstIndex);
+
+            pt.X = rtxtCodigo.ClientRectangle.Width;
+            pt.Y = rtxtCodigo.ClientRectangle.Height;
+            int lastIndex = rtxtCodigo.GetCharIndexFromPosition(pt);
+            int lastLine = rtxtCodigo.GetLineFromCharIndex(lastIndex);
+
+            rtxLineasCodigo.SelectionAlignment = HorizontalAlignment.Center;
+            rtxLineasCodigo.Text = "";
+            rtxTokens.SelectionAlignment = HorizontalAlignment.Center;
+            rtxTokens.Text = "";
+
+            for (int i = firstLine; i< lastLine + 1; i++)
+            {
+                rtxLineasCodigo.Text += (i + 1) + "\n";
+                rtxTokens.Text += (i + 1) + "\n";
+            }
+        }
+
+        private void rtxtCodigo_VScroll(object sender, EventArgs e)
+        {
+            Point pt = new Point(0, 0);
+            int firstIndex = rtxtCodigo.GetCharIndexFromPosition(pt);
+            int firstLine = rtxtCodigo.GetLineFromCharIndex(firstIndex);
+
+            pt.X = rtxtCodigo.ClientRectangle.Width;
+            pt.Y = rtxtCodigo.ClientRectangle.Height;
+            int lastIndex = rtxtCodigo.GetCharIndexFromPosition(pt);
+            int lastLine = rtxtCodigo.GetLineFromCharIndex(lastIndex);
+
+            rtxLineasCodigo.SelectionAlignment = HorizontalAlignment.Center;
+            rtxLineasCodigo.Text = "";
+            rtxTokens.SelectionAlignment = HorizontalAlignment.Center;
+            rtxTokens.Text = "";
+
+            for (int i = firstLine; i < lastLine + 1; i++)
+            {
+                rtxLineasCodigo.Text += (i + 1) + "\n";
+                rtxTokens.Text += (i + 1) + "\n";
+            }
+        }
+
+        private void Form1_KeyDown(object sender, KeyEventArgs e)
+        {
+        }
+
+        private void tabControl1_KeyDown(object sender, KeyEventArgs e)
+        {
         }
     }
 }
