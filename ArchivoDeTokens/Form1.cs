@@ -72,10 +72,12 @@ namespace ArchivoDeTokens
             try
             {
                 listaErrores.Clear();
+                listaSimbolos.Clear();
                 if (string.IsNullOrEmpty(rtxtCodigo.Text))
                     throw new Exception("No hay código");
 
                 string[] lineasCodigo = rtxtCodigo.Lines;
+                contadorSimbolos = 1;
                 int estadoActual = 1;
                 char car;
                 string strCar = "";
@@ -96,7 +98,7 @@ namespace ArchivoDeTokens
                     string tokenFDL = "";
                     if (!lineaLista.EndsWith("~"))
                     {
-                        tokenFDL = "ELFDL ";
+                        tokenFDL = "ERRFDL ";
                         contE++;
                         RegistrarError(numLinea + 1, "Falta el símbolo delimitadol '~' al final");
                     }
@@ -186,25 +188,38 @@ namespace ArchivoDeTokens
                             if (matrizTransicion[int.Parse(celdaActual)]["FDC"] == "ERROR")
                             {
                                 string token = matrizTransicion[int.Parse(celdaActual)]["CAT"];
-                                token = token.Replace("R", "L") ;
-                                tokensDeLinea += "[ELOL:" + token + "] " ;
-                                tokens += "[ELOL:" + token + "] ";
+                                tokensDeLinea += "[ERROR:" + token + "] " ;
+                                tokens += "[ERROR:" + token + "] ";
                                 RegistrarError(numLinea + 1, token);
                                 contE++;
                                 valCadena = "";
                                 estadoActual = 1;
-                                contadorSimbolos--;
+                                //contadorSimbolos--;
 
                             }
                             else if (matrizTransicion[int.Parse(celdaActual)]["FDC"] == "ACEPTA")
                             {
-                                tokensDeLinea += matrizTransicion[int.Parse(celdaActual)]["CAT"] + " ";
-                                tokens += matrizTransicion[int.Parse(celdaActual)]["CAT"]+" ";
+                                if (matrizTransicion[int.Parse(celdaActual)]["CAT"] == "IDVAL")
+                                {
+                                    RegistrarSimbolo(contadorSimbolos++, valCadena);
+                                    Simbolo simboloEncontrado = listaSimbolos.FirstOrDefault(s => s.Nombre == valCadena);
+                                    
+                                    if (simboloEncontrado != null)
+                                    {
+                                        string idPersonalizado = "IDENT" + simboloEncontrado.Num;
+                                        tokensDeLinea += idPersonalizado + " ";
+                                        tokens += idPersonalizado + " ";
+                                    }
+                                }
+                                else
+                                {
+                                    tokensDeLinea += matrizTransicion[int.Parse(celdaActual)]["CAT"] + " ";
+                                    tokens += matrizTransicion[int.Parse(celdaActual)]["CAT"] + " ";
+                                }
                                 estadoActual = 1;
                                 val = matrizTransicion[int.Parse(celdaActual)]["CAT"] + " ";
-                                if(matrizTransicion[int.Parse(celdaActual)]["CAT"] == "IDVAL")
-                                    RegistrarSimbolo(contadorSimbolos++, valCadena);
                                 valCadena = "";
+
                                 if (strCar != "FDC")
                                 {
                                     numCaracter--;
@@ -229,6 +244,7 @@ namespace ArchivoDeTokens
                     filasDeTokens.Add(tokensDeLinea.TrimEnd());
                 }
                 rtxtTokens.Lines = filasDeTokens.ToArray();
+                ResaltarErrores(rtxtTokens);
             }
             catch (Exception ex)
             {
@@ -236,7 +252,7 @@ namespace ArchivoDeTokens
             }
             ActualizarErrores();
             ActualizarSimbolos();
-            lblCE.Text = "Total de eloles: " + contE;
+            lblCE.Text = "Total de errores: " + contE;
         }
 
         private void RegistrarError(int linea, string mensaje)
@@ -543,6 +559,35 @@ namespace ArchivoDeTokens
         private void btnEditarProg_Click(object sender, EventArgs e)
         {
             rtxtCodigo.Enabled = true;
+        }
+        private void ResaltarErrores(RichTextBox rtxt)
+        {
+            string[] palabrasClave = { "[ERROR:VAINV]","[ERROR:IDINV]","[ERROR:CNINV]","[ERROR:PRINV]","[ERROR:EOPARINV]","[ERROR:EOPRELINV]","[ERROR:ECADINV]","[ERROR:ECARINV]","ERRFDL"};
+
+            foreach (string palabra in palabrasClave)
+            {
+                int startindex = 0;
+                while (startindex < rtxt.TextLength)
+                {
+                    // Busca la palabra a partir del último índice encontrado
+                    int wordinterv = rtxt.Find(palabra, startindex, RichTextBoxFinds.None);
+
+                    if (wordinterv != -1)
+                    {
+                        rtxt.Select(wordinterv, palabra.Length);
+                        rtxt.SelectionColor = Color.Red; // Cambia a rojo
+                        startindex = wordinterv + palabra.Length;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+            // Quitar la selección al terminar para que no quede texto marcado
+            rtxt.SelectionStart = rtxt.Text.Length;
+            rtxt.SelectionLength = 0;
+            rtxt.SelectionColor = Color.Black;
         }
     }
 }
